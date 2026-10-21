@@ -406,7 +406,11 @@
 
     let stockItems = [];
     try {
-      stockItems = decodeItems(new URLSearchParams(window.location.search).get('i'));
+      const params = new URLSearchParams(window.location.search);
+      // Новый бот шлёт ?i= (base64), старый — ?items= (JSON как есть). Понимаем оба.
+      stockItems = params.get('i') ? decodeItems(params.get('i'))
+                 : params.get('items') ? JSON.parse(params.get('items'))
+                 : [];
     } catch (e) {
       stockItems = [];
       window._stockError = String(e);
@@ -414,7 +418,8 @@
 
     // ВРЕМЕННО для проверки: что пришло в адресе. Удалить после проверки.
     (() => {
-      const raw = new URLSearchParams(window.location.search).get('i');
+      const q = new URLSearchParams(window.location.search);
+      const raw = q.get('i') ?? q.get('items');
       const info = document.createElement('p');
       info.style.cssText = 'font-size:12px;color:var(--accent);margin:-20px 0 24px';
       info.textContent = 'отладка: i ' + (raw === null ? 'нет' : 'длина ' + raw.length) +

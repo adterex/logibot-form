@@ -364,8 +364,8 @@
     <button type="button" class="link-btn" onclick="addCargoRow()">+ Добавить позицию</button>
   </div>
 
-  <label id="cargoOtherLabel">Другое (не со склада)</label>
-  <input id="cargoOther" placeholder="Например, 3 коробки образцов">
+  <label id="cargoOtherLabel">Другое</label>
+  <input id="cargoOther" placeholder="Инвентарь и прочее">
 
   <label>Комментарий</label>
   <textarea id="comment" rows="1" placeholder="Дополнительная информация"></textarea>
@@ -413,19 +413,8 @@
                  : [];
     } catch (e) {
       stockItems = [];
-      window._stockError = String(e);
     }
 
-    // ВРЕМЕННО для проверки: что пришло в адресе. Удалить после проверки.
-    (() => {
-      const q = new URLSearchParams(window.location.search);
-      const raw = q.get('i') ?? q.get('items');
-      const info = document.createElement('p');
-      info.style.cssText = 'font-size:12px;color:var(--accent);margin:-20px 0 24px';
-      info.textContent = 'отладка: i ' + (raw === null ? 'нет' : 'длина ' + raw.length) +
-        ', позиций: ' + stockItems.length + (window._stockError ? ', ошибка: ' + window._stockError : '');
-      document.getElementById('formSubtitle').after(info);
-    })();
 
     // Группы — по началу названия, так же, как в боте
     const GROUPS = ['Москвичка', 'Огород', 'Прочее'];

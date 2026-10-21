@@ -155,6 +155,7 @@
       font-family: inherit;
       resize: none;
     }
+    textarea { overflow: hidden; line-height: 1.4; }
     input::placeholder, textarea::placeholder { color: var(--muted); opacity: 1; }
 
     input:focus, textarea:focus { outline: none; border-bottom: 1px solid var(--text); }
@@ -367,7 +368,7 @@
   <input id="cargoOther" placeholder="Например, 3 коробки образцов">
 
   <label>Комментарий</label>
-  <textarea id="comment" rows="3" placeholder="Дополнительная информация"></textarea>
+  <textarea id="comment" rows="1" placeholder="Дополнительная информация"></textarea>
 
   <button class="submit-btn" onclick="submitOrder()">Отправить заявку</button>
 
@@ -386,6 +387,13 @@
     applyTheme();
     tg.onEvent('themeChanged', applyTheme);
 
+    // Комментарий: одна строка, растёт по мере ввода — линия всегда сразу под текстом
+    const commentBox = document.getElementById('comment');
+    commentBox.addEventListener('input', () => {
+      commentBox.style.height = 'auto';
+      commentBox.style.height = commentBox.scrollHeight + 'px';
+    });
+
     // --- Груз: список позиций склада бот передаёт в адресе формы (?items=[...]) ---
     // Бот кладёт список в адрес в base64 (параметр i) — так адрес короче
     function decodeItems(packed) {
@@ -401,7 +409,18 @@
       stockItems = decodeItems(new URLSearchParams(window.location.search).get('i'));
     } catch (e) {
       stockItems = [];
+      window._stockError = String(e);
     }
+
+    // ВРЕМЕННО для проверки: что пришло в адресе. Удалить после проверки.
+    (() => {
+      const raw = new URLSearchParams(window.location.search).get('i');
+      const info = document.createElement('p');
+      info.style.cssText = 'font-size:12px;color:var(--accent);margin:-20px 0 24px';
+      info.textContent = 'отладка: i ' + (raw === null ? 'нет' : 'длина ' + raw.length) +
+        ', позиций: ' + stockItems.length + (window._stockError ? ', ошибка: ' + window._stockError : '');
+      document.getElementById('formSubtitle').after(info);
+    })();
 
     // Группы — по началу названия, так же, как в боте
     const GROUPS = ['Москвичка', 'Огород', 'Прочее'];

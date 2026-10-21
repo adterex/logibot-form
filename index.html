@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <script src="timepicker.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      background: #ffffff;
+      color: #111111;
+      font-family: -apple-system, "Helvetica Neue", sans-serif;
+      margin: 0;
+      padding: 28px 20px 32px;
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-family: Georgia, "Times New Roman", serif;
+      font-weight: 400;
+      font-size: 26px;
+      margin: 0 0 4px;
+    }
+
+    .subtitle {
+      color: #8a8a8a;
+      font-size: 13px;
+      margin: 0 0 28px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: #8a8a8a;
+      margin-bottom: 6px;
+    }
+
+    .required { color: #8a8a8a; font-weight: 400; }
+
+    select {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #e5e5e3;
+      background: transparent;
+      color: #111111;
+      font-size: 15px;
+      padding: 8px 0;
+      margin-bottom: 22px;
+      font-family: inherit;
+      border-radius: 0;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    select:focus { outline: none; border-bottom: 1px solid #111111; }
+
+    .hidden { display: none; }
+
+    /* --- Груз: строки «позиция + количество» --- */
+    .cargo-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0 10px;
+      align-items: flex-end;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
+      border-bottom: 1px dashed #eeeeec;
+    }
+    .cargo-row .cargo-group { flex: 0 0 34%; margin-bottom: 10px; }
+    .cargo-row .cargo-item { flex: 1; min-width: 0; margin-bottom: 10px; }
+    .cargo-row input { width: 90px; flex: none; margin-bottom: 10px; }
+    .cargo-row .cargo-del {
+      background: none;
+      border: none;
+      color: #8a8a8a;
+      font-size: 20px;
+      padding: 0 4px 16px;
+      cursor: pointer;
+    }
+    .link-btn {
+      background: none;
+      border: none;
+      color: #b08a3e;
+      font-size: 14px;
+      padding: 0;
+      margin: 0 0 22px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    input, textarea {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #e5e5e3;
+      background: transparent;
+      color: #111111;
+      font-size: 15px;
+      padding: 8px 2px;
+      margin-bottom: 22px;
+      font-family: inherit;
+      resize: none;
+    }
+
+    input:focus, textarea:focus { outline: none; border-bottom: 1px solid #111111; }
+
+    .date-field {
+      border-bottom: 1px solid #e5e5e3;
+      padding: 8px 2px;
+      margin-bottom: 22px;
+      font-size: 15px;
+      cursor: pointer;
+    }
+
+    .date-field.placeholder { color: #b3b3b3; }
+
+    .calendar {
+      display: none;
+      position: relative;
+      margin-bottom: 22px;
+      background: #ffffff;
+      border: 1px solid #e5e5e3;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .calendar.open { display: block; }
+
+    .cal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .cal-header button {
+      width: auto;
+      height: auto;
+      background: none;
+      color: #111111;
+      font-size: 16px;
+      padding: 2px 8px;
+      margin: 0;
+      border-radius: 6px;
+    }
+
+    .cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 4px;
+      text-align: center;
+    }
+
+    .cal-grid .day-name {
+      font-size: 11px;
+      color: #8a8a8a;
+      padding-bottom: 4px;
+    }
+
+    .cal-day {
+      padding: 8px 0;
+      font-size: 13px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .cal-day:hover { background: #f4f0e6; }
+
+    .cal-day.selected {
+      background: #d4af6a;
+      color: #111111;
+      font-weight: 600;
+    }
+
+    .cal-day.empty { cursor: default; }
+
+    /* Прошедшие дни — серые и некликабельные */
+    .cal-day.past { color: #cfcfcf; cursor: default; }
+    .cal-day.past:hover { background: none; }
+
+    .time-picker {
+      display: none;
+      position: relative;
+      justify-content: center;
+      align-items: center;
+      height: 180px;
+      overflow: hidden;
+      margin-bottom: 22px;
+      border: 1px solid #e5e5e3;
+      border-radius: 10px;
+    }
+
+    .time-picker.open { display: flex; }
+
+    .wheel {
+      overflow-y: scroll;
+      scroll-snap-type: y mandatory;
+      height: 100%;
+      width: 60px;
+      text-align: center;
+      scrollbar-width: none;
+    }
+
+    .wheel::-webkit-scrollbar { display: none; }
+
+    .wheel-item {
+      scroll-snap-align: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      color: #b3b3b3;
+    }
+
+    .wheel-separator {
+      font-size: 20px;
+      color: #111111;
+      padding: 0 4px;
+    }
+
+    .wheel-highlight {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 36px;
+      transform: translateY(-50%);
+      background: rgba(212, 175, 106, 0.15);
+      border-top: 1px solid #d4af6a;
+      border-bottom: 1px solid #d4af6a;
+      pointer-events: none;
+    }
+
+    button.submit-btn {
+      width: 100%;
+      background: #d4af6a;
+      color: #111111;
+      border: none;
+      border-radius: 8px;
+      height: 46px;
+      font-size: 15px;
+      font-weight: 600;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="eyebrow">Москвичка · Логистика</div>
+  <h1 id="formTitle">Новая заявка</h1>
+  <p class="subtitle" id="formSubtitle">Заполните детали доставки</p>
+
+  <!-- Только для заявки на будущий выпуск. Список журналов правится здесь -->
+  <div id="journalBlock" class="hidden">
+    <label>Журнал <span class="required">· обязательно</span></label>
+    <select id="journal">
+      <option value="">Выбрать журнал</option>
+      <option>Москвичка</option>
+      <option>Огород</option>
+    </select>
+  </div>
+
+  <label>Город</label>
+  <input id="city" value="Москва">
+
+  <label>Адрес <span class="required">· обязательно</span></label>
+  <input id="address" placeholder="ул. Тверская 12">
+
+  <label>Компания получателя</label>
+  <input id="recipientCompany" placeholder="ООО «Пример»">
+
+  <label>Получатель</label>
+  <input id="recipient" placeholder="Иванова Мария">
+
+  <label>Контакт <span class="required">· обязательно</span></label>
+  <input id="contact" placeholder="+7 999 123 45 67 или @username">
+
+  <div id="dateBlock">
+    <label>Дата доставки <span class="required">· обязательно</span></label>
+    <div class="date-field placeholder" id="dateField" onclick="toggleCalendar()">Выбрать даты</div>
+    <div class="calendar" id="calendar">
+      <div class="cal-header">
+        <button onclick="changeMonth(-1)">‹</button>
+        <span id="calMonthLabel"></span>
+        <button onclick="changeMonth(1)">›</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+
+  <label>Время от</label>
+  <div class="date-field placeholder" id="timeFromField">Выбрать время</div>
+  <div id="timeFromWheel"></div>
+
+  <label>Время до</label>
+  <div class="date-field placeholder" id="timeToField">Выбрать время</div>
+  <div id="timeToWheel"></div>
+
+  <div id="cargoStockBlock">
+    <label>Груз со склада</label>
+    <div id="cargoRows"></div>
+    <button type="button" class="link-btn" onclick="addCargoRow()">+ Добавить позицию</button>
+  </div>
+
+  <label id="cargoOtherLabel">Другое (не со склада)</label>
+  <input id="cargoOther" placeholder="Например, 3 коробки образцов">
+
+  <label>Комментарий</label>
+  <textarea id="comment" rows="3" placeholder="Дополнительная информация"></textarea>
+
+  <button class="submit-btn" onclick="submitOrder()">Отправить заявку</button>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    // --- Груз: список позиций склада бот передаёт в адресе формы (?items=[...]) ---
+    // Бот кладёт список в адрес в base64 (параметр i) — так адрес короче
+    function decodeItems(packed) {
+      if (!packed) return [];
+      let b64 = packed.replace(/-/g, '+').replace(/_/g, '/');
+      while (b64.length % 4) b64 += '=';
+      const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+      return JSON.parse(new TextDecoder().decode(bytes));
+    }
+
+    let stockItems = [];
+    try {
+      stockItems = decodeItems(new URLSearchParams(window.location.search).get('i'));
+    } catch (e) {
+      stockItems = [];
+    }
+
+    // Группы — по началу названия, так же, как в боте
+    const GROUPS = ['Москвичка', 'Огород', 'Прочее'];
+    function itemGroup(name) {
+      const n = name.trim().toLowerCase();
+      if (n.startsWith('москв')) return 'Москвичка';
+      if (n.startsWith('огород')) return 'Огород';
+      return 'Прочее';
+    }
+
+    function fillItems(itemSelect, group) {
+      const items = stockItems.filter(name => itemGroup(name) === group);
+      itemSelect.innerHTML = '<option value="">' + (group ? 'Выпуск' : '← сначала журнал') + '</option>' +
+        items.map(name => `<option>${name}</option>`).join('');
+      itemSelect.disabled = !group;
+    }
+
+    function addCargoRow() {
+      const row = document.createElement('div');
+      row.className = 'cargo-row';
+
+      const groupSelect = document.createElement('select');
+      groupSelect.className = 'cargo-group';
+      const usedGroups = GROUPS.filter(g => stockItems.some(name => itemGroup(name) === g));
+      groupSelect.innerHTML = '<option value="">Журнал</option>' +
+        usedGroups.map(g => `<option>${g}</option>`).join('');
+
+      const select = document.createElement('select');
+      select.className = 'cargo-item';
+      fillItems(select, '');
+      groupSelect.onchange = () => fillItems(select, groupSelect.value);
+
+      const qty = document.createElement('input');
+      qty.type = 'number';
+      qty.min = '1';
+      qty.inputMode = 'numeric';
+      qty.placeholder = 'шт';
+      qty.className = 'cargo-qty';
+
+      const del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'cargo-del';
+      del.textContent = '×';
+      del.onclick = () => row.remove();
+
+      qty.placeholder = 'Кол-во, шт';
+      row.append(groupSelect, select, qty, del);
+      document.getElementById('cargoRows').appendChild(row);
+    }
+
+    if (stockItems.length > 0) {
+      addCargoRow();
+    } else {
+      // Склад недоступен или пуст — остаётся только свободный текст
+      document.getElementById('cargoStockBlock').classList.add('hidden');
+      document.getElementById('cargoOtherLabel').innerHTML = 'Груз <span class="required">· обязательно</span>';
+    }
+
+    // Собирает строки груза. Возвращает null, если где-то выбрана позиция без количества.
+    function collectCargo() {
+      const items = [];
+      for (const row of document.querySelectorAll('.cargo-row')) {
+        const item = row.querySelector('.cargo-item').value;
+        const qty = parseInt(row.querySelector('.cargo-qty').value, 10);
+        const group = row.querySelector('.cargo-group').value;
+        if (!group && !item && !row.querySelector('.cargo-qty').value) continue;  // пустая строка
+        if (!item || !(qty > 0)) return null;
+        items.push({ item: item, qty: qty });
+      }
+      return items;
+    }
+
+    // Режим «заявка на будущий выпуск»: открывается по ссылке ...index.html?mode=preorder
+    // Вместо даты — выбор журнала, дату потом ставит логист.
+    const isPreorder = new URLSearchParams(window.location.search).get('mode') === 'preorder';
+    if (isPreorder) {
+      document.getElementById('formTitle').textContent = 'Заявка на будущий выпуск';
+      document.getElementById('formSubtitle').textContent = 'Дату доставки поставит логист, когда выйдет выпуск';
+      document.getElementById('journalBlock').classList.remove('hidden');
+      document.getElementById('dateBlock').classList.add('hidden');
+    }
+
+    let timeFrom = '';
+    let timeTo = '';
+
+    createTimePicker('timeFromField', 'timeFromWheel', (value) => { timeFrom = value; });
+    createTimePicker('timeToField', 'timeToWheel', (value) => { timeTo = value; });
+
+    // --- Календарь с выбором диапазона дат ---
+    let viewYear = new Date().getFullYear();
+    let viewMonth = new Date().getMonth();
+
+    let rangeStart = null;   // дата первого клика (строка YYYY-MM-DD)
+    let rangeEnd = null;     // дата второго клика, пока не выбрана — null
+    let selectedDates = [];  // все даты между rangeStart и rangeEnd включительно
+
+    const monthNames = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+    const dayNames = ["Пн","Вт","Ср","Чт","Пт","Сб","Вс"];
+
+    function toggleCalendar() {
+      const cal = document.getElementById('calendar');
+      cal.classList.toggle('open');
+      if (cal.classList.contains('open')) renderCalendar();
+    }
+
+    function changeMonth(delta) {
+      viewMonth += delta;
+      if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+      if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+      renderCalendar();
+    }
+
+    // Строит список всех дат от start до end включительно, в формате YYYY-MM-DD
+    function getDatesBetween(start, end) {
+      const result = [];
+      let current = new Date(start);
+      const last = new Date(end);
+
+      while (current <= last) {
+        const y = current.getFullYear();
+        const m = String(current.getMonth() + 1).padStart(2, '0');
+        const d = String(current.getDate()).padStart(2, '0');
+        result.push(`${y}-${m}-${d}`);
+        current.setDate(current.getDate() + 1);
+      }
+
+      return result;
+    }
+
+    function selectDay(dateStr) {
+      if (!rangeStart || rangeEnd) {
+        // Начинаем выбор заново: либо ничего не выбрано, либо диапазон уже завершён
+        rangeStart = dateStr;
+        rangeEnd = null;
+        selectedDates = [dateStr];
+      } else {
+        // rangeStart уже есть, rangeEnd ещё нет — это второй клик
+        if (dateStr < rangeStart) {
+          // кликнули дату раньше начала — меняем местами, чтобы диапазон был верным
+          rangeEnd = rangeStart;
+          rangeStart = dateStr;
+        } else {
+          rangeEnd = dateStr;
+        }
+        selectedDates = getDatesBetween(rangeStart, rangeEnd);
+        document.getElementById('calendar').classList.remove('open');
+      }
+
+      updateDateField();
+      renderCalendar();
+    }
+
+    function updateDateField() {
+      const field = document.getElementById('dateField');
+      field.textContent = selectedDates.map(formatDisplayDate).join(', ');
+      field.classList.remove('placeholder');
+    }
+
+    function formatDisplayDate(isoDate) {
+      const [year, month, day] = isoDate.split('-');
+      return `${day}.${month}.${year}`;
+    }
+
+    function renderCalendar() {
+      document.getElementById('calMonthLabel').textContent = `${monthNames[viewMonth]} ${viewYear}`;
+      const grid = document.getElementById('calGrid');
+      grid.innerHTML = '';
+
+      dayNames.forEach(d => {
+        const el = document.createElement('div');
+        el.className = 'day-name';
+        el.textContent = d;
+        grid.appendChild(el);
+      });
+
+      const firstDay = new Date(viewYear, viewMonth, 1);
+      let startOffset = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+      const daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+
+      for (let i = 0; i < startOffset; i++) {
+        const empty = document.createElement('div');
+        empty.className = 'cal-day empty';
+        grid.appendChild(empty);
+      }
+
+      // Сегодня в том же формате YYYY-MM-DD — для сравнения с датами календаря
+      const now = new Date();
+      const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const el = document.createElement('div');
+        el.className = 'cal-day';
+        el.textContent = day;
+
+        const dateStr = `${viewYear}-${String(viewMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+
+        if (dateStr < todayStr) {
+          // Прошедшая дата: показываем, но выбрать нельзя. Сегодня — можно.
+          el.classList.add('past');
+        } else {
+          if (selectedDates.includes(dateStr)) el.classList.add('selected');
+          el.onclick = () => selectDay(dateStr);
+        }
+        grid.appendChild(el);
+      }
+    }
+
+    // Проверка контакта: ник Telegram через @ или телефон ровно из 11 цифр.
+    // Пробелы, скобки, дефисы и «+» не считаются: «+7 (999) 123-45-67» — это 11 цифр.
+    function isValidContact(text) {
+      const hasUsername = /@[A-Za-z0-9_]{5,32}/.test(text);
+      const digits = text.replace(/\D/g, '');
+      return hasUsername || digits.length === 11;
+    }
+
+    function submitOrder() {
+      const data = {
+        city: document.getElementById('city').value,
+        address: document.getElementById('address').value,
+        recipientCompany: document.getElementById('recipientCompany').value,
+        recipient: document.getElementById('recipient').value,
+        contact: document.getElementById('contact').value,
+        deliveryDates: selectedDates.map(formatDisplayDate),
+        timeFrom: timeFrom,
+        timeTo: timeTo,
+        cargoItems: collectCargo(),
+        cargoOther: document.getElementById('cargoOther').value.trim(),
+        comment: document.getElementById('comment').value,
+      };
+
+      if (isPreorder) {
+        data.preorder = true;
+        data.journal = document.getElementById('journal').value;
+        data.deliveryDates = [];
+      }
+
+      if (data.cargoItems === null) {
+        tg.showAlert('В грузе выбери журнал, выпуск и укажи количество (или удали лишнюю строку ×)');
+        return;
+      }
+      const cargoOk = data.cargoItems.length > 0 || !!data.cargoOther;
+
+      const datesOk = isPreorder ? !!data.journal : data.deliveryDates.length > 0;
+      if (!data.city || !data.address || !data.contact || !datesOk || !cargoOk) {
+        tg.showAlert(isPreorder ? 'Заполни все поля и выбери журнал' : 'Заполни все поля');
+        return;
+      }
+
+      if (!isValidContact(data.contact)) {
+        tg.showAlert('Проверь контакт:\n• телефон — 11 цифр, например +7 999 123 45 67\n• или ник в Telegram через @, не короче 5 символов, например @ivanov');
+        return;
+      }
+
+      tg.sendData(JSON.stringify(data));
+    }
+  </script>
+</body>
+</html>

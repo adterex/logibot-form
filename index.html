@@ -83,6 +83,8 @@
     }
 
     .required { color: var(--muted); font-weight: 400; }
+    .check-row { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+    .check-row input { width: 18px; height: 18px; margin: 0; accent-color: var(--accent); }
 
     select {
       width: 100%;
@@ -319,6 +321,7 @@
       <option value="">Выбрать журнал</option>
       <option>Москвичка</option>
       <option>Огород</option>
+      <option>Приложение</option>
     </select>
   </div>
 
@@ -334,8 +337,12 @@
   <label>Получатель</label>
   <input id="recipient" placeholder="Иванова Мария">
 
-  <label>Контакт <span class="required">· обязательно</span></label>
+  <label>Контакт <span class="required" id="contactRequired">· обязательно</span></label>
   <input id="contact" placeholder="+7 999 123 45 67 или @username">
+  <label class="check-row">
+    <input type="checkbox" id="leaveAtDoor" onchange="onLeaveAtDoor()">
+    Оставить у двери — можно без контакта
+  </label>
 
   <div id="dateBlock">
     <label>Дата доставки <span class="required">· обязательно</span></label>
@@ -417,11 +424,12 @@
 
 
     // Группы — по началу названия, так же, как в боте
-    const GROUPS = ['Москвичка', 'Огород', 'Прочее'];
+    const GROUPS = ['Москвичка', 'Огород', 'Приложение', 'Прочее'];
     function itemGroup(name) {
       const n = name.trim().toLowerCase();
       if (n.startsWith('москв')) return 'Москвичка';
       if (n.startsWith('огород')) return 'Огород';
+      if (n.startsWith('прилож')) return 'Приложение';
       return 'Прочее';
     }
 
@@ -624,6 +632,11 @@
 
     // Проверка контакта: ник Telegram через @ или телефон ровно из 11 цифр.
     // Пробелы, скобки, дефисы и «+» не считаются: «+7 (999) 123-45-67» — это 11 цифр.
+    function onLeaveAtDoor() {
+      const door = document.getElementById('leaveAtDoor').checked;
+      document.getElementById('contactRequired').textContent = door ? '· необязательно' : '· обязательно';
+    }
+
     function isValidContact(text) {
       const hasUsername = /@[A-Za-z0-9_]{5,32}/.test(text);
       const digits = text.replace(/\D/g, '');
@@ -643,7 +656,9 @@
         cargoItems: collectCargo(),
         cargoOther: document.getElementById('cargoOther').value.trim(),
         comment: document.getElementById('comment').value,
+        leaveAtDoor: document.getElementById('leaveAtDoor').checked,
       };
+      const contactNeeded = !data.leaveAtDoor || data.contact.trim() !== '';
 
       if (isPreorder) {
         data.preorder = true;
@@ -658,12 +673,13 @@
       const cargoOk = data.cargoItems.length > 0 || !!data.cargoOther;
 
       const datesOk = isPreorder ? !!data.journal : data.deliveryDates.length > 0;
-      if (!data.city || !data.address || !data.contact || !datesOk || !cargoOk) {
+      if (!data.city || !data.address || (!data.leaveAtDoor && !data.contact) || !datesOk || !cargoOk) {
         tg.showAlert(isPreorder ? 'Заполни все поля и выбери журнал' : 'Заполни все поля');
         return;
       }
 
-      if (!isValidContact(data.contact)) {
+      // Если галочка стоит и контакт пустой — не проверяем; если что-то вписали — проверяем, чтобы поймать опечатку
+      if (contactNeeded && !isValidContact(data.contact)) {
         tg.showAlert('Проверь контакт:\n• телефон — 11 цифр, например +7 999 123 45 67\n• или ник в Telegram через @, не короче 5 символов, например @ivanov');
         return;
       }

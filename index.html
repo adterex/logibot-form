@@ -326,7 +326,14 @@
   </div>
 
   <label>Город</label>
-  <input id="city" value="Москва">
+  <select id="cityMode" onchange="onCityMode()">
+    <option value="moscow">Москва и Подмосковье</option>
+    <option value="other">Другой город</option>
+  </select>
+  <div id="otherCityBlock" class="hidden">
+    <label>Какой город <span class="required">· обязательно</span></label>
+    <input id="otherCity" placeholder="Санкт-Петербург">
+  </div>
 
   <label>Адрес <span class="required">· обязательно</span></label>
   <input id="address" placeholder="ул. Тверская 12">
@@ -642,6 +649,18 @@
 
     // Проверка контакта: ник Telegram через @ или телефон ровно из 11 цифр.
     // Пробелы, скобки, дефисы и «+» не считаются: «+7 (999) 123-45-67» — это 11 цифр.
+    // Город: Москва и Подмосковье — едет водитель; другой город — отправка через СДЭК
+    function onCityMode() {
+      const other = document.getElementById('cityMode').value === 'other';
+      document.getElementById('otherCityBlock').classList.toggle('hidden', !other);
+    }
+
+    function selectedCity() {
+      return document.getElementById('cityMode').value === 'other'
+        ? document.getElementById('otherCity').value.trim()
+        : 'Москва';
+    }
+
     function onLeaveAtDoor() {
       const door = document.getElementById('leaveAtDoor').checked;
       document.getElementById('contactRequired').textContent = door ? '· необязательно' : '· обязательно';
@@ -655,7 +674,7 @@
 
     function submitOrder() {
       const data = {
-        city: document.getElementById('city').value,
+        city: selectedCity(),
         address: document.getElementById('address').value,
         recipientCompany: document.getElementById('recipientCompany').value,
         recipient: document.getElementById('recipient').value,
@@ -683,7 +702,11 @@
       const cargoOk = data.cargoItems.length > 0 || !!data.cargoOther;
 
       const datesOk = isPreorder ? !!data.journal : data.deliveryDates.length > 0;
-      if (!data.city || !data.address || (!data.leaveAtDoor && !data.contact) || !datesOk || !cargoOk) {
+      if (!data.city) {
+        tg.showAlert('Напиши, в какой город отправляем');
+        return;
+      }
+      if (!data.address || (!data.leaveAtDoor && !data.contact) || !datesOk || !cargoOk) {
         tg.showAlert(isPreorder ? 'Заполни все поля и выбери журнал' : 'Заполни все поля');
         return;
       }

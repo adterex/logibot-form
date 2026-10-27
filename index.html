@@ -426,7 +426,8 @@
     // Группы из колонки «Группа» таблицы «Склад» (бот передаёт только те, что не совпадают с названием)
     let groupOverrides = {};
     try {
-      groupOverrides = params.get('g') ? decodeItems(params.get('g')) : {};
+      const gParam = new URLSearchParams(window.location.search).get('g');
+      groupOverrides = gParam ? decodeItems(gParam) : {};
     } catch (e) {
       groupOverrides = {};
     }

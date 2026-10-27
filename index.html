@@ -423,11 +423,20 @@
     }
 
 
-    // Группы — по началу названия, так же, как в боте
+    // Группы из колонки «Группа» таблицы «Склад» (бот передаёт только те, что не совпадают с названием)
+    let groupOverrides = {};
+    try {
+      groupOverrides = params.get('g') ? decodeItems(params.get('g')) : {};
+    } catch (e) {
+      groupOverrides = {};
+    }
+
+    // Иначе — по началу названия, так же, как в боте
     const GROUPS = ['Москвичка', 'Огород', 'Приложение', 'Прочее'];
     function itemGroup(name) {
+      if (groupOverrides[name]) return groupOverrides[name];
       const n = name.trim().toLowerCase();
-      if (n.startsWith('москв')) return 'Москвичка';
+      if (n.startsWith('моск')) return 'Москвичка';
       if (n.startsWith('огород')) return 'Огород';
       if (n.startsWith('прилож')) return 'Приложение';
       return 'Прочее';

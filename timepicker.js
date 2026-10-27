@@ -5,9 +5,9 @@
 
 const ITEM_HEIGHT = 36;
 
-function buildWheelItems(count) {
+function buildWheelItems(count, step = 1) {
   const items = [];
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < count; i += step) {
     items.push(String(i).padStart(2, '0'));
   }
   return items;
@@ -75,7 +75,8 @@ function createTimePicker(fieldId, wheelId, onChange) {
     updateField();
   });
 
-  createWheelColumn(minutesWheel, buildWheelItems(60), (value) => {
+  // Минуты — шагом 15: 00, 15, 30, 45
+  createWheelColumn(minutesWheel, buildWheelItems(60, 15), (value) => {
     selectedMinute = value;
     updateField();
   });
